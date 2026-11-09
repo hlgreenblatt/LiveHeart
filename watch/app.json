@@ -1,0 +1,63 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 9104177,
+    "appName": "Live Heart",
+    "appType": "app",
+    "version": {
+      "code": 6,
+      "name": "1.2.2"
+    },
+    "icon": "icon.png",
+    "vender": "Personal",
+    "description": "Background pulse and steps, activity labels, and foreground practice motion."
+  },
+  "permissions": [
+    "data:user.hd.heart_rate",
+    "data:user.hd.step",
+    "device:os.accelerometer",
+    "device:os.bg_service"
+  ],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "4.0",
+      "target": "4.0",
+      "minVersion": "4.0"
+    }
+  },
+  "targets": {
+    "bip-max": {
+      "module": {
+        "page": {
+          "pages": [
+            "page/index"
+          ]
+        },
+        "app-side": {
+          "path": "app-side/index"
+        },
+        "setting": {
+          "path": "setting/index"
+        },
+        "app-service": {
+          "services": [
+            "app-service/monitor"
+          ]
+        }
+      },
+      "platforms": [
+        {
+          "name": "Amazfit Bip Max",
+          "deviceSource": 11206915
+        }
+      ],
+      "designWidth": 432
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "appName": "Live Heart"
+    }
+  },
+  "defaultLanguage": "en-US"
+}
