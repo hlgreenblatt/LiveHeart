@@ -15,9 +15,12 @@ a Zepp account. Each measurement retains its own time and freshness status.
 
 ## Current status
 
-**1.2.2 is an experimental background-monitor candidate.** Local tests and the
-Zepp build pass; continuous operation on the physical watch is not yet verified.
-Earlier foreground sharing of heart rate, steps and motion worked on hardware.
+**1.2.2 passed a one-minute background check on the physical watch.** With the
+watch showing its normal clock face, fresh heart-rate and step timestamps kept
+advancing at each authorized reader throughout the check. Local tests and the
+Zepp build also pass. Long-duration reliability, battery endurance, reconnection
+and restart behavior remain unverified. Earlier foreground sharing of heart
+rate, steps and motion also worked on hardware.
 
 The 1.2.1 watch reported `Timer returned object` during startup. JavaScript uses
 that type name for both objects and `null`, so the report does not establish
@@ -26,7 +29,7 @@ coercion, rejects `null` explicitly, and flags a timer that does not tick.
 
 | Capability | Status |
 | --- | --- |
-| Heart rate and daily/session steps | Sensor timestamp preserved; background candidate |
+| Heart rate and daily/session steps | Sensor timestamps preserved; one-minute clock-face check passed |
 | Wrist motion summary | Foreground practice screen only |
 | Activity labels | Explicit user selection: tai chi, yoga, tantra, mowing, shoveling, walking |
 | UTC-aware readers | Clock checked before reading; stale and missing data remain explicit |
