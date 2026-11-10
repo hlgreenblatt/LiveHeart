@@ -1,5 +1,6 @@
 // Constant-memory summaries; no raw motion history is retained.
 const round = value => Math.round(value * 100) / 100
+export const MAX_WINDOW_SECONDS = 20
 
 export class MotionWindow {
   constructor() { this.reset() }
@@ -17,7 +18,9 @@ export class MotionWindow {
     const values = [axes.x, axes.y, axes.z]
     if (!values.every(value => Number.isFinite(value) && Math.abs(value) <= 100000)) return
     // A suspended app or clock reset starts a new window, not a fake long average.
-    if (this.n && (ts < this.end || ts - this.start > 10 || this.n >= 10000)) this.reset()
+    // 20 s is the longest window the receiver accepts and the longest a send can
+    // be held back by one unanswered request.
+    if (this.n && (ts < this.end || ts - this.start > MAX_WINDOW_SECONDS || this.n >= 10000)) this.reset()
     if (!this.n) this.start = ts
     this.n++
     if (this.previous) {

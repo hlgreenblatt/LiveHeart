@@ -27,7 +27,7 @@ export class Monitor {
     this.running = false
     this.message = 'Monitoring stopped'
     this.activity = null
-    this.heart = this.steps = this.motion = null
+    this.heart = this.steps = this.motion = this.motionSource = null
     this.lastAck = this.abandoned = 0
     this.onHeart = () => {
       if (!this.running) return
@@ -41,7 +41,7 @@ export class Monitor {
     if (this.running) return
     this.running = true
     this.startedAt = this.now() / 1000
-    this.heart = this.steps = this.motion = this.activity = this.inflight = null
+    this.heart = this.steps = this.motion = this.motionSource = this.activity = this.inflight = null
     this.lastAck = this.abandoned = 0
     const timerRun = {}
     this.timerRun = timerRun
@@ -79,18 +79,19 @@ export class Monitor {
     this.steps = null
     // The next periodic sample carries the label; no duplicate-timestamp send.
   }
-  setMotion(value) { this.motion = value }
+  // The page supplies a function that returns one summary of all motion since
+  // the previous call. It is read once per send, so each sample covers the
+  // whole send interval instead of the last screen refresh.
+  setMotionSource(take) {
+    this.motionSource = typeof take === 'function' ? take : null
+    this.motion = null
+  }
   collect() {
     if (!this.running) return
     const now = this.now() / 1000
     if (this.activity && (now >= this.activity.expires_at || now < this.activity.started_at)) this.setActivity(null)
     try { this.steps = this.step ? this.stepSession.observe(this.step.getCurrent(), now) : null }
     catch (_) { this.steps = null }
-    const sample = snapshot(now, this.heart, this.steps, this.motion)
-    if (!sample) { this.message = 'Waiting for fresh sensor readings'; return }
-    sample.schema = 4
-    sample.context = {monitor_started_at: this.startedAt,
-      mode: sample.motion ? 'practice' : 'background', activity: this.activity}
     if (this.inflight) {
       // Native transport timers normally settle failed requests. If one never
       // settles, give it up; its late completion is ignored by identity below.
@@ -104,6 +105,16 @@ export class Monitor {
     try { connected = this.connected() }
     catch (_) { this.message = 'Link check failed L0'; return }
     if (!connected) { this.message = 'Watch disconnected from phone'; return }
+    // Take the motion window only now that a send will be attempted, so a
+    // delayed reply or a disconnection leaves it accumulating for the next send.
+    if (this.motionSource) {
+      try { this.motion = this.motionSource() } catch (_) { this.motion = null }
+    }
+    const sample = snapshot(now, this.heart, this.steps, this.motion)
+    if (!sample) { this.message = 'Waiting for fresh sensor readings'; return }
+    sample.schema = 4
+    sample.context = {monitor_started_at: this.startedAt,
+      mode: sample.motion ? 'practice' : 'background', activity: this.activity}
     const flight = {ts: sample.ts, sentAt: this.now()}
     this.inflight = flight
     Promise.resolve().then(() => {
@@ -141,7 +152,7 @@ export class Monitor {
     if (validTimerHandle(this.timer)) { try { this.stopTimer(this.timer) } catch (_) {} }
     this.timer = undefined
     try { if (this.heartRate) this.heartRate.offCurrentChange(this.onHeart) } catch (_) {}
-    this.heart = this.steps = this.motion = this.activity = null
+    this.heart = this.steps = this.motion = this.motionSource = this.activity = null
     this.message = 'Monitoring stopped'
   }
 }
