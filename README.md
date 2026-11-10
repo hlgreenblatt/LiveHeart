@@ -195,7 +195,7 @@ rows; it does not store raw accelerometer streams.
 
 ```sh
 bash scripts/test.sh
-git add README.md .gitignore PUBLIC_FILES.txt THIRD_PARTY_NOTICES.md bridge watch scripts
+git add README.md LICENSE .gitignore PUBLIC_FILES.txt THIRD_PARTY_NOTICES.md bridge watch scripts
 python3 scripts/check_public_tree.py
 ```
 
@@ -203,3 +203,8 @@ Tests create synthetic readings in temporary directories and use loopback-only
 HTTP servers. No physical watch, account login, real health file or network
 receiver is required. Update `PUBLIC_FILES.txt` deliberately when adding reviewed
 source files; do not add runtime files to make the check pass.
+
+## Licence
+
+MIT; see `LICENSE`. The vendored messaging library in `watch/lib/zml-app.js`
+keeps its own Apache License 2.0; see `THIRD_PARTY_NOTICES.md`.
