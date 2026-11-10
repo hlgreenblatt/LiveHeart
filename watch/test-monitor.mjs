@@ -52,7 +52,33 @@ pending[1]();await flush();assert.equal(p.monitor.inflight,null)
 p.monitor.stop()
 const bad=setup({request:async()=>{throw {code:4}}});bad.monitor.start();await flush()
 assert.match(bad.monitor.message,/timed out/);assert.equal(bad.monitor.inflight,null);bad.monitor.stop()
-console.log('Monitor passed: background timer, fresh-only reconnect, activity provenance/expiry, midnight steps, late acknowledgments, stop, timeout.')
+// A request whose promise never settles must not stop delivery for good.
+const never=[],late=[];let stuckCalls=0
+const stuck=setup({request:req=>{stuckCalls++
+  if(stuckCalls===1)return new Promise(resolve=>late.push(()=>resolve({ok:true,accepted_ts:req.params.ts})))
+  never.push(JSON.parse(JSON.stringify(req.params)));return Promise.resolve({ok:true,accepted_ts:req.params.ts})}})
+stuck.monitor.start();await flush()
+assert.equal(stuckCalls,1);const lost=stuck.monitor.inflight;assert.ok(lost)
+for(let i=0;i<3;i++){stuck.steps(101+i);stuck.advance(5000);stuck.tick();await flush()}
+assert.equal(stuckCalls,1,'A request younger than the stuck limit is still awaited')
+assert.equal(stuck.monitor.inflight,lost)
+stuck.steps(110);stuck.advance(5000);stuck.tick();await flush()
+assert.equal(stuckCalls,2,'Delivery resumes after a request never settles')
+assert.equal(stuck.monitor.abandoned,1)
+assert.equal(never[0].steps.since_start,10,'The retry carries current readings, not the lost sample')
+assert.equal(stuck.monitor.deliveryStatus(),'Delivered 0s ago')
+const acked=stuck.monitor.lastAck;stuck.advance(1000);late[0]();await flush()
+assert.equal(stuck.monitor.lastAck,acked,'The abandoned request cannot acknowledge later')
+assert.equal(stuck.monitor.inflight,null)
+stuck.advance(4000);stuck.tick();await flush();assert.equal(stuckCalls,3)
+stuck.monitor.stop()
+// A watch clock that moves backwards must not hold a request forever either.
+let backCalls=0;const back=setup({request:req=>{backCalls++
+  return backCalls===1?Promise.resolve({ok:true,accepted_ts:req.params.ts}):new Promise(()=>{})}})
+back.monitor.start();await flush();back.advance(10000);back.tick();await flush()
+assert.equal(backCalls,2);back.advance(-5000);back.tick();await flush()
+assert.equal(backCalls,3);back.monitor.stop()
+console.log('Monitor passed: background timer, fresh-only reconnect, activity provenance/expiry, midnight steps, late acknowledgments, stop, timeout, stuck-request recovery.')
 
 const oldContext={StepSession,snapshot,Date,Math,Promise}
 const oldSource=fs.readFileSync(new URL('./test-fixtures/monitor-v1.2.0.js',import.meta.url),'utf8').replace(/^import .*\n/gm,'').replace(/export /g,'')+'\nglobalThis.Monitor=Monitor'
