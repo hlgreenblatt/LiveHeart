@@ -15,19 +15,21 @@ a Zepp account. Each measurement retains its own time and freshness status.
 
 ## Current status
 
-**1.2.3 is the next watch-test candidate.** It recovers from an unanswered send
+**1.2.3 passed a short foreground check and a one-minute clock-face check on
+the physical watch.** All three authorized readers reported fresh heart rate,
+steps and motion during the foreground check. At the normal clock face, heart
+and step timestamps kept advancing, while motion became unavailable as expected.
+Long-duration reliability, battery endurance, reconnection and restart behavior
+remain unverified on hardware.
+
+The update recovers from an unanswered send
 after 20 seconds, on the next collection tick, and collects practice motion
 across the full send interval. Motion also accumulates while waiting for a reply
 or a phone reconnection, up to a 20-second window. A longer interruption starts
 a new window; a window already sent is not replayed if delivery fails. Synthetic
-tests cover these cases. Physical-watch verification of 1.2.3 is still pending.
-
-**1.2.2 passed a one-minute background check on the physical watch.** With the
-watch showing its normal clock face, fresh heart-rate and step timestamps kept
-advancing at each authorized reader throughout the check. Local tests and the
-Zepp build also pass. Long-duration reliability, battery endurance, reconnection
-and restart behavior remain unverified. Earlier foreground sharing of heart
-rate, steps and motion also worked on hardware.
+tests cover these failure cases; they have not been induced on the physical watch.
+Local tests and the Zepp build also pass. Version 1.2.2 previously passed a
+one-minute clock-face check.
 
 The 1.2.1 watch reported `Timer returned object` during startup. JavaScript uses
 that type name for both objects and `null`, so the report does not establish
