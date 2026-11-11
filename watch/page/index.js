@@ -16,6 +16,7 @@ Page({
     this.lastError = ''
     this.activityIndex = 0
     this.motionWindow = new MotionWindow()
+    this.takeMotion = () => this.motionWindow.take()
     const text = (y, h, size, value, color = 0xffffff) => createWidget(widget.TEXT, {
       x: 24, y, w: 384, h, text_size: size, color, align_h: align.CENTER_H, text_style: text_style.WRAP, text: value
     })
@@ -57,7 +58,8 @@ Page({
     const monitor = this.shared.monitor
     const running = !!(monitor && monitor.running)
     if (this.practice && !running) this.stopPractice()
-    if (this.practice) monitor.setMotion(this.motionWindow.take())
+    // A reloaded service has a new monitor; keep it connected to this page's motion.
+    if (this.practice && monitor.motionSource !== this.takeMotion) monitor.setMotionSource(this.takeMotion)
     const now = Date.now() / 1000
     const fresh = item => item && now >= item.ts && now - item.ts <= 20
     this.value.setProperty(prop.TEXT, running && fresh(monitor.heart) ? monitor.heart.bpm + ' bpm' : '-- bpm')
@@ -138,6 +140,9 @@ Page({
       this.accel.setFreqMode(FREQ_MODE_LOW)
       this.accel.onChange(this.onMotion)
       this.practice = true
+      this.motionWindow.reset()
+      // The monitor takes one window per send (see Monitor.setMotionSource).
+      this.shared.monitor.setMotionSource(this.takeMotion)
       this.accel.start()
       setPageBrightTime({brightTime: 3600000})
       pauseDropWristScreenOff({duration: 0})
@@ -150,7 +155,7 @@ Page({
     try { if (this.accel) this.accel.stop() } catch (_) {}
     this.accel = null
     this.motionWindow.reset()
-    if (this.shared.monitor) this.shared.monitor.setMotion(null)
+    if (this.shared.monitor) this.shared.monitor.setMotionSource(null)
     resetPageBrightTime()
     resetDropWristScreenOff()
   },
