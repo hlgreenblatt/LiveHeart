@@ -24,7 +24,7 @@ Page({
       x: 30, y, w: 372, h, radius: 18, normal_color: 0x235c4d,
       press_color: 0x338065, color: 0xffffff, text_size: 23, text: label, click_func: click
     })
-    text(14, 32, 25, 'Live Heart 1.2.2')
+    text(14, 32, 25, 'Live Heart 1.2.3')
     this.value = text(50, 55, 41, '-- bpm')
     this.stepsText = text(110, 30, 24, 'Steps today: --')
     this.status = text(145, 100, 26, 'Monitoring stopped')

@@ -5,7 +5,7 @@ AppSettingsPage({
     const read = key => settingText(props.settingsStorage.getItem(key))
     const save = (key, value) => props.settingsStorage.setItem(key, settingText(value))
     return Section({}, [
-      Text({}, ['Live Heart 1.2.2 — background monitor']),
+      Text({}, ['Live Heart 1.2.3 — background monitor']),
       Text({}, ['On your WATCH, start the background monitor and allow background access. Pulse and steps can then continue at the clock face. Practice motion needs its screen open.']),
       TextInput({label: 'Bridge address', value: read('bridge_url'),
         onChange: value => {

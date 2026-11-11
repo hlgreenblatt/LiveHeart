@@ -15,6 +15,13 @@ a Zepp account. Each measurement retains its own time and freshness status.
 
 ## Current status
 
+**1.2.3 is the next watch-test candidate.** It recovers from an unanswered send
+after 20 seconds, on the next collection tick, and collects practice motion
+across the full send interval. Motion also accumulates while waiting for a reply
+or a phone reconnection, up to a 20-second window. A longer interruption starts
+a new window; a window already sent is not replayed if delivery fails. Synthetic
+tests cover these cases. Physical-watch verification of 1.2.3 is still pending.
+
 **1.2.2 passed a one-minute background check on the physical watch.** With the
 watch showing its normal clock face, fresh heart-rate and step timestamps kept
 advancing at each authorized reader throughout the check. Local tests and the
