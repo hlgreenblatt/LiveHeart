@@ -2,6 +2,10 @@ import { StepSession, snapshot } from '../page/activity'
 import { validTimerHandle, requireTimerHandle, timerFailure } from './native-timers'
 
 export const SEND_INTERVAL_MS = 5000
+export const REQUEST_TIMEOUT_MS = 12000
+// A request that has not settled this long after it was sent is abandoned, so
+// one reply that never arrives cannot stop every later delivery.
+export const STUCK_REQUEST_MS = 20000
 export const ACTIVITIES = [
   ['tai_chi', 'Tai chi'], ['yoga', 'Yoga'], ['tantra', 'Tantra'],
   ['mowing', 'Mowing'], ['shoveling', 'Shoveling'], ['walking', 'Walking']
@@ -24,7 +28,7 @@ export class Monitor {
     this.message = 'Monitoring stopped'
     this.activity = null
     this.heart = this.steps = this.motion = null
-    this.lastAck = 0
+    this.lastAck = this.abandoned = 0
     this.onHeart = () => {
       if (!this.running) return
       try {
@@ -38,7 +42,7 @@ export class Monitor {
     this.running = true
     this.startedAt = this.now() / 1000
     this.heart = this.steps = this.motion = this.activity = this.inflight = null
-    this.lastAck = 0
+    this.lastAck = this.abandoned = 0
     const timerRun = {}
     this.timerRun = timerRun
     this.timerTicks = 0
@@ -87,16 +91,24 @@ export class Monitor {
     sample.schema = 4
     sample.context = {monitor_started_at: this.startedAt,
       mode: sample.motion ? 'practice' : 'background', activity: this.activity}
-    if (this.inflight) return // Native transport timers settle failed requests.
+    if (this.inflight) {
+      // Native transport timers normally settle failed requests. If one never
+      // settles, give it up; its late completion is ignored by identity below.
+      const age = this.now() - this.inflight.sentAt
+      if (age >= 0 && age < STUCK_REQUEST_MS) return
+      this.inflight = null
+      this.abandoned++
+      this.message = 'Phone reply never arrived; retrying'
+    }
     let connected
     try { connected = this.connected() }
     catch (_) { this.message = 'Link check failed L0'; return }
     if (!connected) { this.message = 'Watch disconnected from phone'; return }
-    const flight = {ts: sample.ts}
+    const flight = {ts: sample.ts, sentAt: this.now()}
     this.inflight = flight
     Promise.resolve().then(() => {
       if (!this.running || this.inflight !== flight) return null
-      return this.request({method: 'sample', params: sample}, {timeout: 12000})
+      return this.request({method: 'sample', params: sample}, {timeout: REQUEST_TIMEOUT_MS})
     }).then(result => {
       if (!this.running || this.inflight !== flight) return
       if (result && result.ok && result.accepted_ts === flight.ts) {
