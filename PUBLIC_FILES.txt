@@ -1,4 +1,5 @@
 .gitignore
+LICENSE
 PUBLIC_FILES.txt
 README.md
 THIRD_PARTY_NOTICES.md
